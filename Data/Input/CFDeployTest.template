@@ -1,0 +1,38 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "ContosoVpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsSupport": "true",
+        "EnableDnsHostnames": "true",
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  "contoso-vpc",
+                  {
+                    "Fn::Select": [
+                      "2",
+                      {
+                        "Fn::Split": [
+                          "/",
+                          { "Ref": "AWS::StackId" }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Mappings": {
+    "LoadMachineAMIRegionMap": {
+      "ap-southeast-1": { "LoadTestAMI": "ami-04336e67b2d52699e" },
+      "ap-southeast-2": { "LoadTestAMI": "ami-0bbdeaec32d59d680" }
+    }
+  },
+  "Resources": {
+    "LoadTestVPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsSupport": "true",
+        "EnableDnsHostnames": "true",
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "LoadTestVPC"
+          }
+        ]
+      }
+    },
+    "subnet1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            { "Fn::GetAZs": "" }
+          ]
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "MapPublicIpOnLaunch": true,
+        "VpcId": { "Ref": "LoadTestVPC" },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "subnet-1"
+          }
+        ]
+      }
+    },
+    "subnet2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "1",
+            { "Fn::GetAZs": "" }
+          ]
+        },
+        "CidrBlock": "10.0.2.0/24",
+        "MapPublicIpOnLaunch": true,
+        "VpcId": { "Ref": "LoadTestVPC" },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "subnet-2"
+          }
+        ]
+      }
+    },
+    "LoadMachine1": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Fn::FindInMap": [
+            "LoadMachineAMIRegionMap",
+            { "Ref": "AWS::Region" },
+            "LoadTestAMI"
+          ]
+        },
+        "InstanceType": "t2.2xlarge",
+        "SubnetId": { "Ref": "subnet1" },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "LoadVM-1"
+          }
+        ]
+      }
+    },
+    "LoadMachine2": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Fn::FindInMap": [
+            "LoadMachineAMIRegionMap",
+            { "Ref": "AWS::Region" },
+            "LoadTestAMI"
+          ]
+        },
+        "InstanceType": "t2.2xlarge",
+        "SubnetId": { "Ref": "subnet2" },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "LoadVM-2"
+          }
+        ]
+      }
+    },
+    "LoadMachine3": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Fn::FindInMap": [
+            "LoadMachineAMIRegionMap",
+            { "Ref": "AWS::Region" },
+            "LoadTestAMI"
+          ]
+        },
+        "InstanceType": "t2.2xlarge",
+        "SubnetId": { "Ref": "subnet1" },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "LoadVM-3"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Mappings": {
+    "WarmUpMachineAMIRegionMap": {
+      "ap-southeast-2": { "WarmUpAMI": "ami-0b843744331a4db30" }
+    }
+  },
+  "Resources": {
+    "WarmUpVPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsSupport": "true",
+        "EnableDnsHostnames": "true",
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "WarmUpVPC"
+          }
+        ]
+      }
+    },
+    "subnet1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "1",
+            { "Fn::GetAZs": "" }
+          ]
+        },
+        "CidrBlock": "10.0.1.0/24",
+        "MapPublicIpOnLaunch": true,
+        "VpcId": { "Ref": "WarmUpVPC" },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "subnet-1"
+          }
+        ]
+      }
+    },
+    "WarmUpMachine": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Fn::FindInMap": [
+            "WarmUpMachineAMIRegionMap",
+            { "Ref": "AWS::Region" },
+            "WarmUpAMI"
+          ]
+        },
+        "InstanceType": "t2.medium",
+        "SubnetId": { "Ref": "subnet1" },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "WarmupVM-1"
+          }
+        ]
+      }
+    }
+  }
+}

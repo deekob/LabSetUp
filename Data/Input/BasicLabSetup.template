@@ -1,0 +1,457 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "ContosoVpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsSupport": "true",
+        "EnableDnsHostnames": "true",
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  "contoso-vpc",
+                  {
+                    "Fn::Select": [
+                      "2",
+                      {
+                        "Fn::Split": [
+                          "/",
+                          { "Ref": "AWS::StackId" }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Pub1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "0",
+            { "Fn::GetAZs": "" }
+          ]
+        },
+        "CidrBlock": "10.0.3.0/24",
+        "MapPublicIpOnLaunch": true,
+        "VpcId": { "Ref": "ContosoVpc" },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "pub-1"
+          }
+        ]
+      }
+    },
+    "Pub2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": {
+          "Fn::Select": [
+            "1",
+            { "Fn::GetAZs": "" }
+          ]
+        },
+        "CidrBlock": "10.0.4.0/24",
+        "MapPublicIpOnLaunch": true,
+        "VpcId": { "Ref": "ContosoVpc" },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "pub-2"
+          }
+        ]
+      }
+    },
+    "PubRt": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": { "Ref": "ContosoVpc" },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "pub-rt"
+          }
+        ]
+      }
+    },
+    "PubRoute": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": { "Ref": "ContosoIg" },
+        "RouteTableId": { "Ref": "PubRt" }
+      }
+    },
+    "ContosoIg": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  "contoso-ig",
+                  {
+                    "Fn::Select": [
+                      "2",
+                      {
+                        "Fn::Split": [
+                          "/",
+                          { "Ref": "AWS::StackId" }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "AttachIG": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": { "Ref": "ContosoVpc" },
+        "InternetGatewayId": { "Ref": "ContosoIg" }
+      }
+    },
+    "Pub1RouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": { "Ref": "Pub1" },
+        "RouteTableId": { "Ref": "PubRt" }
+      }
+    },
+    "Pub2RouteTableAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": { "Ref": "Pub2" },
+        "RouteTableId": { "Ref": "PubRt" }
+      }
+    },
+    "ContainerHostRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "ec2.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM",
+          "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess",
+          "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
+        ],
+        "RoleName": {
+          "Fn::Join": [
+            "-",
+            [
+              "My-Container-Host-Role",
+              {
+                "Fn::Select": [
+                  "2",
+                  {
+                    "Fn::Split": [
+                      "/",
+                      { "Ref": "AWS::StackId" }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "ECSInstanceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+        ],
+        "RoleName": {
+          "Fn::Join": [
+            "-",
+            [
+              "ecsInstanceRole",
+              {
+                "Fn::Select": [
+                  "2",
+                  {
+                    "Fn::Split": [
+                      "/",
+                      { "Ref": "AWS::StackId" }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "ContainerHostIntanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Roles": [ { "Ref": "ContainerHostRole" } ],
+        "InstanceProfileName": {
+          "Fn::Join": [
+            "-",
+            [
+              "My-Container-Host-Role",
+              {
+                "Fn::Select": [
+                  "2",
+                  {
+                    "Fn::Split": [
+                      "/",
+                      { "Ref": "AWS::StackId" }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "ECSInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Roles": [ { "Ref": "ECSInstanceRole" } ],
+        "InstanceProfileName": {
+          "Fn::Join": [
+            "-",
+            [
+              "ecsInstanceRole",
+              {
+                "Fn::Select": [
+                  "2",
+                  {
+                    "Fn::Split": [
+                      "/",
+                      { "Ref": "AWS::StackId" }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "ContainerHostSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupName": {
+          "Fn::Join": [
+            "-",
+            [
+              "MyContainerHost-SG",
+              {
+                "Fn::Select": [
+                  "2",
+                  {
+                    "Fn::Split": [
+                      "/",
+                      { "Ref": "AWS::StackId" }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "GroupDescription": "Security group for lab machine with RDP Access",
+        "VpcId": { "Ref": "ContosoVpc" },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 3389,
+            "ToPort": 3389,
+            "CidrIp": "0.0.0.0/0"
+          },
+		  {
+            "IpProtocol": "tcp",
+            "FromPort": 3389,
+            "ToPort": 3389,
+			"CidrIpv6":"::/0"
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "-1",
+            "FromPort": "-1",
+            "ToPort": "-1",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "ECSInstanceSG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupName": {
+          "Fn::Join": [
+            "-",
+            [
+              "ecsInstance-SG",
+              {
+                "Fn::Select": [
+                  "2",
+                  {
+                    "Fn::Split": [
+                      "/",
+                      { "Ref": "AWS::StackId" }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "GroupDescription": "Security group for lab ecs instance with RDP and http port Access",
+        "VpcId": { "Ref": "ContosoVpc" },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 0,
+            "ToPort":65535,
+            "SourceSecurityGroupId": { "Ref": "LoadBalancerSG" },
+            "Description": "Traffic from load balancer"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 3389,
+            "ToPort": 3389,
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Lab purpose only. This is a bad pratice. We are going to explore EC2 instance and need RDP access"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 3389,
+            "ToPort": 3389,
+			"CidrIpv6":"::/0",
+            "Description": "Lab purpose only. This is a bad pratice. We are going to explore EC2 instance and need RDP access"
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "-1",
+            "FromPort": "-1",
+            "ToPort": "-1",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "LoadBalancerSG": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupName": {
+          "Fn::Join": [
+            "-",
+            [
+              "LoadBalancer-SG",
+              {
+                "Fn::Select": [
+                  "2",
+                  {
+                    "Fn::Split": [
+                      "/",
+                      { "Ref": "AWS::StackId" }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "GroupDescription": "Security group for Load Balancer with http access",
+        "VpcId": { "Ref": "ContosoVpc" },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 80,
+            "ToPort": 80,
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allowing http traffic to load balancer"
+          },
+		            {
+            "IpProtocol": "tcp",
+            "FromPort": 80,
+            "ToPort": 80,
+		    "CidrIpv6":"::/0",
+            "Description": "Allowing http traffic to load balancer"
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "-1",
+            "FromPort": "-1",
+            "ToPort": "-1",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "VPCId": {
+      "Description": "Contoso VPC",
+      "Value": { "Ref": "ContosoVpc" }
+    },
+    "Subnet1": {
+      "Description": "Subnet 1 id",
+      "Value": { "Ref": "Pub1" }
+    },
+    "Subnet2": {
+      "Description": "Subnet 2 id",
+      "Value": { "Ref": "Pub2" }
+    },
+    "ContainerHostIAMRole": {
+      "Description": "Container host IAM role",
+      "Value": { "Ref": "ContainerHostRole" }
+    }
+  }
+
+}

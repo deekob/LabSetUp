@@ -1,0 +1,53 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "StarInclusions",
+            "Effect": "Allow",
+            "Action": [
+                "aws-portal:*",
+                "cloudformation:*",
+                "cloudwatch:*",
+                "events:*",
+                "logs:*",
+                "ecr:*",
+                "ecs:*",
+                "appsync:*",
+                "api-gateway:*",
+                "cognito:*",
+                "dynamodb:*",
+                "lambda:*",
+                "rekognition:*",
+                "elasticsearch:*",
+                "s3:*",
+                "kms:*",
+                "sts:*",
+                "iam:*",
+                "ec2:*",
+                "autoscaling:*",
+                "trustedadvisor:*",
+                "config:*",
+                "application-autoscaling:*",
+                "discovery:*",
+                "elasticloadbalancing:*",
+                "route53:*",
+                "servicediscovery:*"
+            ],
+            "Resource": [
+                "*"
+            ]
+        },
+        {
+            "Sid": "CloudFormationRequirements",
+            "Effect": "Allow",
+            "Action": [
+                "SNS:*",
+                "s3:*"
+          
+            ],
+            "Resource": [
+                "*"
+            ]
+        }
+    ]
+}
